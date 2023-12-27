@@ -71,6 +71,10 @@
 		<el-card class="panel-group">
 			<div ref="visitRecordEcharts" style="height:500px;"></div>
 		</el-card>
+		<!--  持股比例-->
+		<el-card class="panel-group">
+			<div ref="stockProportionEcharts" style="height:500px;"></div>
+		</el-card>
 	</div>
 </template>
 
@@ -95,6 +99,7 @@
 				tagEcharts: null,
 				mapEcharts: null,
 				visitRecordEcharts: null,
+				visitStockProportionEcharts:null,
 				categoryOption: {
 					title: {
 						text: '分类下文章数量',
@@ -360,6 +365,33 @@
 						}
 					]
 				},
+				stockProportionOption: {
+					title: {
+						text: '股份比例',
+						x: 'center'
+					},
+					tooltip: {
+						trigger: 'item',
+						formatter: '{a} <br/>{b} : {c} ({d}%)'
+					},
+					legend: {
+						left: 'center',
+						top: 'bottom',
+						data: []
+					},
+					series: [
+						{
+							name: '文章数量',
+							top: '-10%',
+							type: 'pie',
+							radius: [30, 110],
+							roseType: 'area',
+							data: []
+						}
+					]
+				},
+
+				
 			}
 		},
 		mounted() {
@@ -390,6 +422,10 @@
 					this.visitRecordOption.series[0].data = res.data.visitRecord.pv
 					this.visitRecordOption.series[1].data = res.data.visitRecord.uv
 					this.initVisitRecordEcharts()
+					//持股比例
+					this.stockProportionOption.legend.data = res.data.tag.legend
+					this.stockProportionOption.series[0].data = res.data.tag.series
+					this.initStockProportionEcharts()
 				})
 			},
 			initCategoryEcharts() {
@@ -421,6 +457,10 @@
 			initVisitRecordEcharts() {
 				this.visitRecordEcharts = echarts.init(this.$refs.visitRecordEcharts)
 				this.visitRecordEcharts.setOption(this.visitRecordOption)
+			},
+			initStockProportionEcharts(){
+				this.stockProportionEcharts = echarts.init(this.$refs.stockProportionEcharts, 'light')
+				this.stockProportionEcharts.setOption(this.stockProportionOption)
 			},
 		}
 	}
