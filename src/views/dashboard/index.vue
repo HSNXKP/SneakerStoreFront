@@ -7,7 +7,7 @@
 						<SvgIcon icon-class="pv" class-name="card-panel-icon"/>
 					</div>
 					<div class="card-panel-description">
-						<div class="card-panel-text">今日PV</div>
+						<div class="card-panel-text">今日单量</div>
 						<span class="card-panel-num">{{ pv }}</span>
 					</div>
 				</el-card>
@@ -19,7 +19,7 @@
 						<SvgIcon icon-class="yonghu" class-name="card-panel-icon"/>
 					</div>
 					<div class="card-panel-description">
-						<div class="card-panel-text">今日UV</div>
+						<div class="card-panel-text">今日利润</div>
 						<span class="card-panel-num">{{ uv }}</span>
 					</div>
 				</el-card>
@@ -31,7 +31,7 @@
 						<SvgIcon icon-class="article" class-name="card-panel-icon"/>
 					</div>
 					<div class="card-panel-description">
-						<div class="card-panel-text">文章数</div>
+						<div class="card-panel-text">月销售利润</div>
 						<span class="card-panel-num">{{ blogCount }}</span>
 					</div>
 				</el-card>
@@ -43,14 +43,14 @@
 						<SvgIcon icon-class="pinglun-blue" class-name="card-panel-icon"/>
 					</div>
 					<div class="card-panel-description">
-						<div class="card-panel-text">评论数</div>
+						<div class="card-panel-text">总销售利润</div>
 						<span class="card-panel-num">{{ commentCount }}</span>
 					</div>
 				</el-card>
 			</el-col>
 		</el-row>
 
-		<el-row class="panel-group" :gutter="20">
+		<!-- <el-row class="panel-group" :gutter="20">
 			<el-col :span="8">
 				<el-card>
 					<div ref="categoryEcharts" style="height:500px;"></div>
@@ -66,14 +66,15 @@
 					<div ref="mapEcharts" style="height:500px;"></div>
 				</el-card>
 			</el-col>
-		</el-row>
-
-		<el-card class="panel-group">
+		</el-row> -->
+		
+		<!-- <el-card class="panel-group">
 			<div ref="visitRecordEcharts" style="height:500px;"></div>
-		</el-card>
+		</el-card> -->
+
 		<!--  持股比例-->
-		<el-card class="panel-group">
-			<div ref="stockProportionEcharts" style="height:500px;"></div>
+		<el-card class="panel-group" >
+			<div ref="stockProportionEcharts"  id="echart" ></div>
 		</el-card>
 	</div>
 </template>
@@ -85,6 +86,7 @@
 	import {getDashboard} from "@/api/dashboard";
 	//城市经纬度数据来自 https://github.com/Naccl/region2coord
 	import geoCoordMap from '@/util/city2coord.json'
+	import {getStockProportion} from "@/api/stockProportion";
 
 	export default {
 		name: "Dashboard",
@@ -100,6 +102,7 @@
 				mapEcharts: null,
 				visitRecordEcharts: null,
 				visitStockProportionEcharts:null,
+				myChart:null,
 				categoryOption: {
 					title: {
 						text: '分类下文章数量',
@@ -381,21 +384,40 @@
 					},
 					series: [
 						{
-							name: '文章数量',
+							name: '股份占比',
 							top: '-10%',
 							type: 'pie',
-							radius: [30, 110],
-							roseType: 'area',
+							radius: ['40%', '70%'],
+    						avoidLabelOverlap: false,
+							itemStyle: {
+       						   borderRadius: 10,
+     						   borderColor: '#fff',
+     						   borderWidth: 2
+    						},	
+     						label: {
+      							show: false,
+     						    position: 'center'
+   							},
+     						emphasis: {
+    				    		label: {
+     			     				show: true,
+     			     				fontSize: 40,
+      		    					fontWeight: 'bold'
+      			  				}
+    		  				},
+    						labelLine: {
+     					  		  show: false
+     						},
 							data: []
 						}
 					]
 				},
-
-				
 			}
 		},
 		mounted() {
 			this.getData()
+			this.getStockProportion()
+			this.drawEcharts()
 		},
 		methods: {
 			getData() {
@@ -423,8 +445,16 @@
 					this.visitRecordOption.series[1].data = res.data.visitRecord.uv
 					this.initVisitRecordEcharts()
 					//持股比例
-					this.stockProportionOption.legend.data = res.data.tag.legend
-					this.stockProportionOption.series[0].data = res.data.tag.series
+					// this.stockProportionOption.legend.data = res.data.tag.legend
+					// this.stockProportionOption.series[0].data = res.data.tag.series
+					// this.initStockProportionEcharts()
+				})
+			},
+			getStockProportion(){
+				getStockProportion().then(res => {
+					console.log(res)
+					this.stockProportionOption.legend.data = res.data.legend
+					this.stockProportionOption.series[0].data = res.data.series
 					this.initStockProportionEcharts()
 				})
 			},
@@ -462,6 +492,33 @@
 				this.stockProportionEcharts = echarts.init(this.$refs.stockProportionEcharts, 'light')
 				this.stockProportionEcharts.setOption(this.stockProportionOption)
 			},
+			drawEcharts() {
+      // 第三步，通过echarts的init方法实例化一个echarts对象myChart，并，保存在data变量中
+     	this.visitStockProportionEcharts = echarts.init(document.getElementById("echart"));
+      // 第四步，执行myChart的setOption方法去画图，当然至于配置项，我们要提前配置好，这里的配置项
+      //         写在data中，方便我们在一些事件中去修改对应配置项，比如点击按钮更改配置项数据
+    	this.visitStockProportionEcharts.setOption(this.stockProportionOption);
+      // 第五步，在页面初始化加载的时候绑定页面resize事件监听。补充resize事件：resize事件是在浏览器窗口大小改变时，会触发。
+      //        如当用户调整窗口大小，或者最大化、最小化、恢复窗口大小显示时触发 resize 事件。
+      //        我们一般使用这个事件去做窗口大小与对应元素的大小适配
+     	window.addEventListener("resize", () => {
+        // 第六步，执行echarts自带的resize方法，即可做到让echarts图表自适应
+        this.visitStockProportionEcharts.resize();
+        // 如果有多个echarts，就在这里执行多个echarts实例的resize方法,不过一般要做组件化开发，即一个.vue文件只会放置一个echarts实例
+        /*
+        this.myChart2.resize();
+        this.myChart3.resize();
+        ......
+        */
+      });
+	},
+	beforeDestroy() {
+      /* 页面组件销毁的时候，别忘了移除绑定的监听resize事件，否则的话，多渲染几次
+      容易导致内存泄漏和额外CPU或GPU占用哦*/
+      window.removeEventListener("resize", () => {
+        this.myChart.resize();
+      });
+    },
 		}
 	}
 </script>
@@ -469,7 +526,13 @@
 <style scoped>
 	.panel-group {
 		margin-bottom: 30px;
+		
 	}
+	#echart{
+			height:500px;
+			width: 100%;
+	}
+
 
 	.panel-group .card-panel {
 		height: 108px;
